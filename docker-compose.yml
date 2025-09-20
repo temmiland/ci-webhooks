@@ -32,11 +32,17 @@ services:
       retries: 3
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.ci-web.rule=Host(`${CI_DOMAIN}`,`www.${CI_DOMAIN}`)"
-      - "traefik.http.routers.ci-web.entrypoints=websecure"
-      - "traefik.http.routers.ci-web.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.ci-web.entrypoints=web"
+      - "traefik.http.routers.ci-web.rule=Host(`ci.temmi.land`) || Host(`www.ci.temmi.land`)"
+      - "traefik.http.middlewares.ci-web-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.ci-web.middlewares=ci-web-https-redirect"
+      - "traefik.http.routers.ci-web-secure.entrypoints=websecure"
+      - "traefik.http.routers.ci-web-secure.rule=Host(`ci.temmi.land`) || Host(`www.ci.temmi.land`)"
+      - "traefik.http.routers.ci-web-secure.tls=true"
+      - "traefik.http.routers.ci-web-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.ci-web-secure.service=ci-web"
       - "traefik.http.services.ci-web.loadbalancer.server.port=${CI_PORT}"
-      - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
+      - "traefik.docker.network=proxy"
 
   updater:
     image: almir/webhook:2.8.1
