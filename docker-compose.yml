@@ -18,8 +18,6 @@ services:
       -hooks /etc/webhook/hooks.json
       -port ${CI_PORT}
       -verbose
-      -secure
-      -hotreload
     ports:
       - "${CI_PORT}:${CI_PORT}"
     networks:
@@ -54,7 +52,6 @@ services:
       -hooks /etc/webhook/hooks.json
       -port ${CI_UPDATER_PORT}
       -verbose
-      -execute-command-output
     ports:
       - "${CI_UPDATER_PORT}:${CI_UPDATER_PORT}"
     healthcheck:
