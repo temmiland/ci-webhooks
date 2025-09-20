@@ -17,6 +17,8 @@ services:
       - ./ci/data/logs:/opt/webhook/logs
       - /var/run/docker.sock:/var/run/docker.sock
       - ${PROJECTS_ROOT}:/opt/webhook/projects
+      - ~/.gitconfig:/home/webhook/.gitconfig:ro
+      - ~/.ssh:/home/webhook/.ssh:ro
     working_dir: /opt/webhook
     command: >
       -hooks /etc/webhook/hooks.json
@@ -56,6 +58,8 @@ services:
       - ./ci-updater/data/logs:/opt/webhook/logs
       - ${MAIN_WEBHOOK_DIR}:/opt/webhook/ci-main
       - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.gitconfig:/home/webhook/.gitconfig:ro
+      - ~/.ssh:/home/webhook/.ssh:ro
     working_dir: /opt/webhook
     command: >
       -hooks /etc/webhook/hooks.json
