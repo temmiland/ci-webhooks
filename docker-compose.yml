@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   webhook:
     image: almir/webhook:2.8.1
@@ -25,7 +23,7 @@ services:
     ports:
       - "${CI_PORT}:${CI_PORT}"
     networks:
-      - ${TRAEFIK_NETWORK_NAME}
+      - traefik_network
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:${CI_PORT}/health || exit 1"]
       interval: 30s
@@ -65,7 +63,7 @@ services:
       timeout: 5s
       retries: 3
     networks:
-      - ${TRAEFIK_NETWORK_NAME}
+      - traefik_network
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ci-updater.rule=Host(`${CI_UPDATER_DOMAIN}`,`www.${CI_UPDATER_DOMAIN}`)"
@@ -75,5 +73,6 @@ services:
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
 
 networks:
-  ${TRAEFIK_NETWORK_NAME}:
+  traefik_network:
     external: true
+    name: ${TRAEFIK_NETWORK_NAME}
