@@ -30,16 +30,17 @@ fi
 echo '{"status":"running","message":"Deployment is running"}' > "$STATUS_FILE"
 
 {
-    echo "Deploying $REPO_NAME from $BRANCH..."
-    cd "$PATH"
+    echo "Deploying $REPO_NAME from $BRANCH..." >> "$LOG_FILE"
+    cd "$REPO_PATH"
 
-    git fetch origin "$BRANCH"
-    git reset --hard "origin/$BRANCH"
+    git fetch origin "$BRANCH"  >> "$LOG_FILE" 2>&1
+    git reset --hard "origin/$BRANCH" >> "$LOG_FILE" 2>&1
 
     if [ -x "$SCRIPT" ]; then
         bash "$SCRIPT"
     else
-        echo "Deployment script $SCRIPT not found or not executable"
+        ls -lah >> "$LOG_FILE" 2>&1
+        echo "Deployment script $SCRIPT not found or not executable" >> "$LOG_FILE"
         exit 1
     fi
 
