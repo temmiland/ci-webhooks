@@ -1,6 +1,8 @@
 services:
   webhook:
-    image: almir/webhook:2.8.1
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
     hostname: ci.temmi.land
     container_name: ci-web
     restart: always
@@ -40,7 +42,9 @@ services:
       - "traefik.docker.network=proxy"
 
   updater:
-    image: almir/webhook:2.8.1
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
     hostname: update.ci.temmi.land
     container_name: ci-updater
     env_file:
