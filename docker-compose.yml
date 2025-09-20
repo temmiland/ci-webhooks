@@ -23,6 +23,7 @@ services:
     ports:
       - "${CI_PORT}:${CI_PORT}"
     networks:
+      - default
       - proxy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:${CI_PORT}/health || exit 1"]
@@ -76,3 +77,5 @@ services:
 networks:
   proxy:
     external: true
+  default:
+    driver: bridge
