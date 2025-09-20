@@ -1,0 +1,9 @@
+{
+  "network": "proxy",
+  "ci_port": 9001,
+  "ci_updater_port": 9002,
+  "ci_domain": "ci.example.com",
+  "ci_updater_domain": "update.example.com",
+  "projects_root": "/srv/projects",
+  "main_webhook_dir": "/srv/ci-main"
+}
