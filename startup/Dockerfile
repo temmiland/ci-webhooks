@@ -2,7 +2,7 @@
 FROM alpine:latest
 
 # Install jq and bash (no cache)
-RUN apk add --no-cache jq bash
+RUN apk add --no-cache jq bash openssl
 
 # Set working directory
 WORKDIR /app
