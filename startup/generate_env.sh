@@ -12,23 +12,22 @@ get_json() {
 # Read values from JSON
 NETWORK=$(get_json network)
 CI_PORT=$(get_json ci_port)
-CI_UPDATER_PORT=$(get_json ci_updater_port)
 CI_DOMAIN=$(get_json ci_domain)
-CI_UPDATER_DOMAIN=$(get_json ci_updater_domain)
 PROJECTS_ROOT=$(get_json projects_root)
 MAIN_WEBHOOK_DIR=$(get_json main_webhook_dir)
+CI_KEY=$(get_json ci_key)
+
+# Generate secrets on the fly
+WEBHOOK_KEY=$(openssl rand -hex 16)
 
 # Write .env
 cat > "$ENV_FILE" <<EOF
 # Generated from $CONFIG_FILE
 
-NETWORK_NAME=$NETWORK
+TRAEFIK_NETWORK_NAME=$NETWORK
 CI_PORT=$CI_PORT
-CI_UPDATER_PORT=$CI_UPDATER_PORT
 CI_DOMAIN=$CI_DOMAIN
-CI_UPDATER_DOMAIN=$CI_UPDATER_DOMAIN
 PROJECTS_ROOT=$PROJECTS_ROOT
 MAIN_WEBHOOK_DIR=$MAIN_WEBHOOK_DIR
+CI_KEY=$CI_KEY
 EOF
-
-echo "✅ .env file generated"

@@ -1,0 +1,10 @@
+{
+  "repos": [
+    {
+      "name": "example",
+      "path": "/srv/projects/example",
+      "branch": "main",
+      "deploy_script": "deploy.sh"
+    }
+  ]
+}

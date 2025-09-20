@@ -1,0 +1,50 @@
+services:
+  webhook:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: ci-web
+    hostname: ${CI_DOMAIN}
+    restart: always
+    env_file: ./.env
+    working_dir: /opt/webhook
+    command: >
+      -hooks /etc/webhook/hooks.json
+      -port ${CI_PORT}
+      -verbose
+    volumes:
+      - ./config/repos.json:/opt/webhook/repos.json:ro
+      - ./ci/hooks.tpl.json:/etc/webhook/hooks.tpl.json:ro
+      - ./ci/status.sh:/opt/webhook/status.sh:ro
+      - ./ci/deploy.sh:/opt/webhook/deploy.sh:ro
+      - ./ci/_deploy.sh:/opt/webhook/_deploy.sh:ro
+      - ./ci/data/status:/opt/webhook/status
+      - ./ci/data/logs:/opt/webhook/logs
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${PROJECTS_ROOT}:/opt/webhook/projects
+      - ~/.gitconfig:/home/webhook/.gitconfig:ro
+      - ~/.ssh:/root/.ssh:ro
+    ports:
+      - "${CI_PORT}:${CI_PORT}"
+    networks:
+      - default
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.ci-web.entrypoints=web"
+      - "traefik.http.routers.ci-web.rule=Host(`${CI_DOMAIN}`) || Host(`www.${CI_DOMAIN}`)"
+      - "traefik.http.routers.ci-web.middlewares=ci-web-https-redirect"
+      - "traefik.http.middlewares.ci-web-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.ci-web-secure.entrypoints=websecure"
+      - "traefik.http.routers.ci-web-secure.rule=Host(`${CI_DOMAIN}`) || Host(`www.${CI_DOMAIN}`)"
+      - "traefik.http.routers.ci-web-secure.tls=true"
+      - "traefik.http.routers.ci-web-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.ci-web-secure.service=ci-web"
+      - "traefik.http.services.ci-web.loadbalancer.server.port=${CI_PORT}"
+
+networks:
+  proxy:
+    external: true
+  default:
+    driver: bridge

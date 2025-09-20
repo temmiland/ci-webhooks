@@ -1,0 +1,46 @@
+[
+  {
+    "id": "deploy-project",
+    "execute-command": "/opt/webhook/deploy.sh",
+    "command-working-directory": "/opt/webhook/projects",
+    "include-command-output-in-response": true,
+    "trigger-rule": {
+      "match": {
+        "type": "value",
+        "value": "${CI_KEY}",
+        "parameter": {
+          "source": "url",
+          "name": "key"
+        }
+      }
+    },
+    "pass-arguments-to-command": [
+      {
+        "source": "url",
+        "name": "repo"
+      }
+    ]
+  },
+  {
+    "id": "status-project",
+    "execute-command": "/opt/webhook/status.sh",
+    "command-working-directory": "/opt/webhook/projects",
+    "include-command-output-in-response": true,
+    "trigger-rule": {
+      "match": {
+        "type": "value",
+        "value": "${CI_KEY}",
+        "parameter": {
+          "source": "url",
+          "name": "key"
+        }
+      }
+    },
+    "pass-arguments-to-command": [
+      {
+        "source": "url",
+        "name": "repo"
+      }
+    ]
+  }
+]
