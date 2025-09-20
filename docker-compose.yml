@@ -1,0 +1,79 @@
+version: "3.9"
+
+services:
+  webhook:
+    image: almir/webhook:2.8.1
+    container_name: ci-webhook
+    env_file:
+      - ./.env
+    volumes:
+      - ./ci/hooks.json:/etc/webhook/hooks.json:ro
+      - ./config/repos.json:/opt/webhook/repos.json:ro
+      - ./ci/deploy.sh:/opt/webhook/deploy.sh:ro
+      - ./ci/_deploy.sh:/opt/webhook/_deploy.sh:ro
+      - ./ci/data/status:/opt/webhook/status
+      - ./ci/data/logs:/opt/webhook/logs
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${PROJECTS_ROOT}:/opt/webhook/projects
+    working_dir: /opt/webhook
+    command: >
+      -hooks /etc/webhook/hooks.json
+      -port ${CI_PORT}
+      -verbose
+      -secure
+      -hotreload
+    ports:
+      - "${CI_PORT}:${CI_PORT}"
+    networks:
+      - ${TRAEFIK_NETWORK_NAME}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${CI_PORT}/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ci.rule=Host(`${CI_DOMAIN}`,`www.${CI_DOMAIN}`)"
+      - "traefik.http.routers.ci.entrypoints=websecure"
+      - "traefik.http.routers.ci.tls.certresolver=letsencrypt"
+      - "traefik.http.services.ci.loadbalancer.server.port=${CI_PORT}"
+      - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
+
+updater:
+    image: almir/webhook:2.8.1
+    container_name: ci-updater
+    env_file:
+      - ./.env
+    volumes:
+      - ./ci-updater/hooks.json:/etc/webhook/hooks.json:ro
+      - ./ci-updater/update.sh:/opt/webhook/update.sh:ro
+      - ./ci-updater/data/status:/opt/webhook/status
+      - ./ci-updater/data/logs:/opt/webhook/logs
+      - ${MAIN_WEBHOOK_DIR}:/opt/webhook/ci-main
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /opt/webhook
+    command: >
+      -hooks /etc/webhook/hooks.json
+      -port ${CI_UPDATER_PORT}
+      -verbose
+      -execute-command-output
+    ports:
+      - "${CI_UPDATER_PORT}:${CI_UPDATER_PORT}"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${CI_UPDATER_PORT}/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - ${TRAEFIK_NETWORK_NAME}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ci-updater.rule=Host(`${CI_UPDATER_DOMAIN}`,`www.${CI_UPDATER_DOMAIN}`)"
+      - "traefik.http.routers.ci-updater.entrypoints=websecure"
+      - "traefik.http.routers.ci-updater.tls.certresolver=letsencrypt"
+      - "traefik.http.services.ci-updater.loadbalancer.server.port=${CI_UPDATER_PORT}"
+      - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
+
+networks:
+  ${TRAEFIK_NETWORK_NAME}:
+    external: true

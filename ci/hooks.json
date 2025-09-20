@@ -1,0 +1,23 @@
+[
+  {
+    "id": "deploy-project",
+    "execute-command": "/opt/webhook/deploy.sh",
+    "command-working-directory": "/opt/webhook/projects",
+    "trigger-rule": {
+      "match": {
+        "type": "value",
+        "value": "${WEBHOOK_KEY}",
+        "parameter": {
+          "source": "header",
+          "name": "X-Auth-Key"
+        }
+      }
+    },
+    "pass-arguments-to-command": [
+      {
+        "source": "payload",
+        "name": "repo"
+      }
+    ]
+  }
+]

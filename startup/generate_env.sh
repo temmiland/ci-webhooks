@@ -18,6 +18,10 @@ CI_UPDATER_DOMAIN=$(get_json ci_updater_domain)
 PROJECTS_ROOT=$(get_json projects_root)
 MAIN_WEBHOOK_DIR=$(get_json main_webhook_dir)
 
+# Generate secrets on the fly
+UPDATER_KEY=$(openssl rand -hex 16)
+WEBHOOK_KEY=$(openssl rand -hex 16)
+
 # Write .env
 cat > "$ENV_FILE" <<EOF
 # Generated from $CONFIG_FILE
@@ -29,6 +33,8 @@ CI_DOMAIN=$CI_DOMAIN
 CI_UPDATER_DOMAIN=$CI_UPDATER_DOMAIN
 PROJECTS_ROOT=$PROJECTS_ROOT
 MAIN_WEBHOOK_DIR=$MAIN_WEBHOOK_DIR
-EOF
 
-echo "✅ .env file generated"
+# Generated secrets
+UPDATER_KEY=$UPDATER_KEY
+WEBHOOK_KEY=$WEBHOOK_KEY
+EOF
