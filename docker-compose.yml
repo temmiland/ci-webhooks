@@ -1,7 +1,9 @@
 services:
   webhook:
     image: almir/webhook:2.8.1
-    container_name: ci-webhook
+    hostname: ci.temmi.land
+    container_name: ci-web
+    restart: always
     env_file:
       - ./.env
     volumes:
@@ -21,7 +23,7 @@ services:
     ports:
       - "${CI_PORT}:${CI_PORT}"
     networks:
-      - traefik_network
+      - proxy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:${CI_PORT}/health || exit 1"]
       interval: 30s
@@ -29,14 +31,15 @@ services:
       retries: 3
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.ci.rule=Host(`${CI_DOMAIN}`,`www.${CI_DOMAIN}`)"
-      - "traefik.http.routers.ci.entrypoints=websecure"
-      - "traefik.http.routers.ci.tls.certresolver=letsencrypt"
-      - "traefik.http.services.ci.loadbalancer.server.port=${CI_PORT}"
+      - "traefik.http.routers.ci-web.rule=Host(`${CI_DOMAIN}`,`www.${CI_DOMAIN}`)"
+      - "traefik.http.routers.ci-web.entrypoints=websecure"
+      - "traefik.http.routers.ci-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.ci-web.loadbalancer.server.port=${CI_PORT}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
 
   updater:
     image: almir/webhook:2.8.1
+    hostname: update.ci.temmi.land
     container_name: ci-updater
     env_file:
       - ./.env
@@ -60,7 +63,8 @@ services:
       timeout: 5s
       retries: 3
     networks:
-      - traefik_network
+      - default
+      - proxy
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ci-updater.rule=Host(`${CI_UPDATER_DOMAIN}`,`www.${CI_UPDATER_DOMAIN}`)"
@@ -70,6 +74,5 @@ services:
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
 
 networks:
-  traefik_network:
+  proxy:
     external: true
-    name: ${TRAEFIK_NETWORK_NAME}
