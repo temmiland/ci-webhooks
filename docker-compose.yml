@@ -25,11 +25,6 @@ services:
     networks:
       - default
       - proxy
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:${CI_PORT}/health || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ci-web.entrypoints=web"
@@ -64,11 +59,6 @@ services:
       -verbose
     ports:
       - "${CI_UPDATER_PORT}:${CI_UPDATER_PORT}"
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:${CI_UPDATER_PORT}/health || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
     networks:
       - default
       - proxy
