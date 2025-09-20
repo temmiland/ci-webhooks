@@ -8,14 +8,14 @@
         "type": "value",
         "value": "${WEBHOOK_KEY}",
         "parameter": {
-          "source": "header",
-          "name": "X-Auth-Key"
+          "source": "url",
+          "name": "key"
         }
       }
     },
     "pass-arguments-to-command": [
       {
-        "source": "payload",
+        "source": "url",
         "name": "repo"
       }
     ]
