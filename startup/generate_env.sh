@@ -18,7 +18,10 @@ MAIN_WEBHOOK_DIR=$(get_json main_webhook_dir)
 CI_KEY=$(get_json ci_key)
 
 # Generate secrets on the fly
-WEBHOOK_KEY=$(openssl rand -hex 16)
+if [ -z "$CI_KEY" ] || [ "$CI_KEY" == "null" ]; then
+    echo "No CI_KEY provided in $CONFIG_FILE, generating a new one."
+    CI_KEY=$(openssl rand -hex 16)
+fi
 
 # Write .env
 cat > "$ENV_FILE" <<EOF
