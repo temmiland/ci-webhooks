@@ -4,7 +4,7 @@ FROM golang:1.21-alpine AS build
 LABEL org.opencontainers.image.authors="almir@dzinovic.net"
 
 WORKDIR /go/src/github.com/adnanh/webhook
-ENV WEBHOOK_VERSION=2.8.2
+ENV WEBHOOK_VERSION=2.8.3
 
 # Install dependencies, download source, build webhook binary and remove build dependencies
 RUN apk add --no-cache --virtual .build-deps curl gcc libc-dev git \
@@ -17,8 +17,9 @@ RUN apk add --no-cache --virtual .build-deps curl gcc libc-dev git \
 # --- Final Stage ---
 FROM alpine:3.21
 
-# Install runtime dependencies
-RUN apk add --no-cache bash ca-certificates tzdata gettext git openssh docker docker-compose jq
+# Runtime dependencies: this container only receives/validates webhooks and enqueues
+# deploy jobs — it never touches git, Docker, or SSH keys (see ci/agent/Dockerfile).
+RUN apk add --no-cache bash ca-certificates tzdata gettext
 
 COPY --from=build /usr/local/bin/webhook /usr/local/bin/webhook
 

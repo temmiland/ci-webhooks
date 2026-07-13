@@ -1,16 +1,16 @@
 [
   {
     "id": "deploy-project",
-    "execute-command": "/opt/webhook/deploy.sh",
-    "command-working-directory": "/opt/webhook/projects",
+    "execute-command": "/opt/webhook/trigger-deploy.sh",
+    "http-methods": ["POST"],
     "include-command-output-in-response": true,
     "trigger-rule": {
       "match": {
         "type": "value",
         "value": "${CI_KEY}",
         "parameter": {
-          "source": "url",
-          "name": "key"
+          "source": "header",
+          "name": "X-Api-Key"
         }
       }
     },
@@ -24,15 +24,15 @@
   {
     "id": "status-project",
     "execute-command": "/opt/webhook/status.sh",
-    "command-working-directory": "/opt/webhook/projects",
+    "http-methods": ["GET"],
     "include-command-output-in-response": true,
     "trigger-rule": {
       "match": {
         "type": "value",
         "value": "${CI_KEY}",
         "parameter": {
-          "source": "url",
-          "name": "key"
+          "source": "header",
+          "name": "X-Api-Key"
         }
       }
     },

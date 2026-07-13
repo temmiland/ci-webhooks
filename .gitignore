@@ -1,3 +1,5 @@
 config/*
+!config/*.tpl.json
 ci/data/*
 .env
+.DS_Store

@@ -3,6 +3,5 @@
   "ci_port": 9001,
   "ci_domain": "ci.example.com",
   "projects_root": "/srv/projects",
-  "main_webhook_dir": "/srv/ci-main",
   "ci_key": "null"
 }

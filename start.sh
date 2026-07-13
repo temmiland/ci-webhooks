@@ -2,12 +2,15 @@
 set -euo pipefail
 
 # Check for Dependencies
-for cmd in docker "docker compose"; do
-    if ! command -v $cmd &> /dev/null; then
-        echo "❌ $cmd is not installed. Please install $cmd and try again."
-        exit 1
-    fi
-done
+if ! command -v docker &> /dev/null; then
+    echo "❌ docker is not installed. Please install docker and try again."
+    exit 1
+fi
+
+if ! docker compose version &> /dev/null; then
+    echo "❌ docker compose is not available. Please install the Docker Compose plugin and try again."
+    exit 1
+fi
 
 # Paths
 HOST_STARTUP_DIR="$PWD/startup"

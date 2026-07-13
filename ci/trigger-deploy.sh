@@ -2,6 +2,7 @@
 set -euo pipefail
 
 REPO_NAME=${1:-}
+QUEUE_DIR="/opt/webhook/queue"
 
 if [ -z "$REPO_NAME" ]; then
     echo '{"status":"error","message":"No repository name provided. Exiting."}'
@@ -13,10 +14,10 @@ if [[ ! "$REPO_NAME" =~ ^[A-Za-z0-9_-]+$ ]]; then
     exit 1
 fi
 
-STATUS_FILE="/opt/webhook/status/deploy_$REPO_NAME.json"
+mkdir -p "$QUEUE_DIR"
+TMP_FILE=$(mktemp "$QUEUE_DIR/.tmp-XXXXXX")
+echo "$REPO_NAME" > "$TMP_FILE"
+JOB_NAME=$(basename "$TMP_FILE")
+mv "$TMP_FILE" "$QUEUE_DIR/${JOB_NAME#.tmp-}.job"
 
-if [[ -f "$STATUS_FILE" ]]; then
-    cat "$STATUS_FILE"
-else
-    echo "{\"status\":\"unknown\",\"message\":\"No status file found for repository $REPO_NAME.\"}"
-fi
+echo '{"status":"queued","message":"Deployment queued for '"$REPO_NAME"'"}'

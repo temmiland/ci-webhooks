@@ -1,5 +1,5 @@
-# Use minimal Alpine image
-FROM alpine:latest
+# Use minimal Alpine image (pinned, same base as the other images)
+FROM alpine:3.21
 
 # Install jq and bash (no cache)
 RUN apk add --no-cache jq bash openssl

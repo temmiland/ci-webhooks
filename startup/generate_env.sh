@@ -9,18 +9,30 @@ get_json() {
     jq -r ".$1" "$CONFIG_FILE"
 }
 
+# Fail fast on missing required keys instead of writing the literal "null"
+require() {
+    if [ -z "$2" ] || [ "$2" == "null" ]; then
+        echo "ERROR: required key '$1' is missing in $CONFIG_FILE" >&2
+        exit 1
+    fi
+}
+
 # Read values from JSON
 NETWORK=$(get_json network)
 CI_PORT=$(get_json ci_port)
 CI_DOMAIN=$(get_json ci_domain)
 PROJECTS_ROOT=$(get_json projects_root)
-MAIN_WEBHOOK_DIR=$(get_json main_webhook_dir)
 CI_KEY=$(get_json ci_key)
 
-# Generate secrets on the fly
+require network "$NETWORK"
+require ci_port "$CI_PORT"
+require ci_domain "$CI_DOMAIN"
+require projects_root "$PROJECTS_ROOT"
+
+# Generate secrets on the fly (256-bit, matches README "Best Practices")
 if [ -z "$CI_KEY" ] || [ "$CI_KEY" == "null" ]; then
     echo "No CI_KEY provided in $CONFIG_FILE, generating a new one."
-    CI_KEY=$(openssl rand -hex 16)
+    CI_KEY=$(openssl rand -hex 32)
 fi
 
 # Write .env
@@ -31,6 +43,5 @@ TRAEFIK_NETWORK_NAME=$NETWORK
 CI_PORT=$CI_PORT
 CI_DOMAIN=$CI_DOMAIN
 PROJECTS_ROOT=$PROJECTS_ROOT
-MAIN_WEBHOOK_DIR=$MAIN_WEBHOOK_DIR
 CI_KEY=$CI_KEY
 EOF

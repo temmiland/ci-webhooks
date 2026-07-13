@@ -1,4 +1,8 @@
 services:
+  # Public-facing control plane: receives the webhook, validates the API key,
+  # and drops a job file into the shared queue. Holds no docker.sock, no SSH
+  # keys, and cannot reach repos.json — a compromise here does not by itself
+  # grant deploy or host access.
   webhook:
     build:
       context: ./
@@ -8,40 +12,80 @@ services:
     restart: always
     env_file: ./.env
     working_dir: /opt/webhook
+    # Hardening: nothing here needs to escalate or write outside the mounted
+    # queue dir and the /etc/webhook volume (hooks.json is rendered there).
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     command: >
       -hooks /etc/webhook/hooks.json
       -port ${CI_PORT}
-      -verbose
     volumes:
-      - ./config/repos.json:/opt/webhook/repos.json:ro
       - ./ci/hooks.tpl.json:/etc/webhook/hooks.tpl.json:ro
       - ./ci/status.sh:/opt/webhook/status.sh:ro
-      - ./ci/deploy.sh:/opt/webhook/deploy.sh:ro
-      - ./ci/_deploy.sh:/opt/webhook/_deploy.sh:ro
-      - ./ci/data/status:/opt/webhook/status
-      - ./ci/data/logs:/opt/webhook/logs
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ${PROJECTS_ROOT}:/opt/webhook/projects
-      - ~/.gitconfig:/home/webhook/.gitconfig:ro
-      - ~/.ssh:/root/.ssh:ro
-    ports:
-      - "${CI_PORT}:${CI_PORT}"
+      - ./ci/trigger-deploy.sh:/opt/webhook/trigger-deploy.sh:ro
+      - ./ci/data/queue:/opt/webhook/queue
+      - ./ci/data/status:/opt/webhook/status:ro
+    # No `ports:` here on purpose — Traefik reaches the container over the
+    # `proxy` network. Publishing the port directly would expose plain HTTP
+    # without TLS and without the rate-limit middleware.
     networks:
-      - default
       - proxy
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
       - "traefik.http.routers.ci-web.entrypoints=web"
-      - "traefik.http.routers.ci-web.rule=Host(`${CI_DOMAIN}`) || Host(`www.${CI_DOMAIN}`)"
+      - "traefik.http.routers.ci-web.rule=Host(`${CI_DOMAIN}`)"
       - "traefik.http.routers.ci-web.middlewares=ci-web-https-redirect"
       - "traefik.http.middlewares.ci-web-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.ci-web-secure.entrypoints=websecure"
-      - "traefik.http.routers.ci-web-secure.rule=Host(`${CI_DOMAIN}`) || Host(`www.${CI_DOMAIN}`)"
+      - "traefik.http.routers.ci-web-secure.rule=Host(`${CI_DOMAIN}`)"
       - "traefik.http.routers.ci-web-secure.tls=true"
       - "traefik.http.routers.ci-web-secure.tls.certresolver=letsencrypt"
       - "traefik.http.routers.ci-web-secure.service=ci-web"
+      - "traefik.http.routers.ci-web-secure.middlewares=ci-web-ratelimit"
+      - "traefik.http.middlewares.ci-web-ratelimit.ratelimit.average=10"
+      - "traefik.http.middlewares.ci-web-ratelimit.ratelimit.period=1m"
+      - "traefik.http.middlewares.ci-web-ratelimit.ratelimit.burst=5"
       - "traefik.http.services.ci-web.loadbalancer.server.port=${CI_PORT}"
+
+  # Privileged execution plane: watches the queue and runs the actual deploy
+  # (git + the repo's own docker compose build/up). Holds docker.sock and SSH
+  # keys, but is not published, has no Traefik labels, and is not on the
+  # `proxy` network — nothing on the internet-facing path can reach it directly.
+  deploy-agent:
+    build:
+      context: ./
+      dockerfile: ci/agent/Dockerfile
+    container_name: ci-deploy-agent
+    restart: always
+    working_dir: /opt/webhook
+    # Optional: override the default 120s per-deploy timeout, or the default
+    # 7-day log retention (watch.sh discards deploy logs untouched longer
+    # than this), e.g.:
+    # environment:
+    #   - DEPLOY_TIMEOUT=600
+    #   - LOG_RETENTION_DAYS=14
+    volumes:
+      - ./config/repos.json:/opt/webhook/repos.json:ro
+      - ./ci/_deploy.sh:/opt/webhook/_deploy.sh:ro
+      - ./ci/agent/watch.sh:/opt/webhook/watch.sh:ro
+      - ./ci/data/queue:/opt/webhook/queue
+      - ./ci/data/status:/opt/webhook/status
+      - ./ci/data/logs:/opt/webhook/logs
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Mounted at the SAME path as on the host: repos.json uses host paths,
+      # and docker-outside-of-docker bind mounts in the target projects'
+      # compose files are resolved by the HOST daemon — paths must match.
+      - ${PROJECTS_ROOT}:${PROJECTS_ROOT}
+      - ~/.gitconfig:/root/.gitconfig:ro
+      # Prefer a dedicated read-only deploy key dir instead of your full
+      # ~/.ssh — see README "Use a dedicated deploy key".
+      - ~/.ssh:/root/.ssh:ro
 
 networks:
   proxy:
