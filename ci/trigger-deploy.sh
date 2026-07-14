@@ -9,7 +9,7 @@ if [ -z "$REPO_NAME" ]; then
     exit 1
 fi
 
-if [[ ! "$REPO_NAME" =~ ^[A-Za-z0-9_-]+$ ]]; then
+if [[ ! "$REPO_NAME" =~ ^[A-Za-z0-9_.-]+$ ]]; then
     echo '{"status":"error","message":"Invalid repository name."}'
     exit 1
 fi
