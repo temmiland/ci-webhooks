@@ -24,7 +24,7 @@ while true; do
         REPO_NAME=$(<"$job")
         rm -f "$job"
 
-        if [[ "$REPO_NAME" =~ ^[A-Za-z0-9_-]+$ ]]; then
+        if [[ "$REPO_NAME" =~ ^[A-Za-z0-9_.-]+$ ]]; then
             if ! timeout "$DEPLOY_TIMEOUT" /opt/webhook/_deploy.sh "$REPO_NAME"; then
                 echo "Deploy failed or timed out for $REPO_NAME"
                 echo '{"status":"error","message":"Deployment failed or timed out"}' \
